@@ -6,18 +6,16 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javax.imageio.ImageIO;
-import java.awt.*;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import javafx.scene.Node.*;
 
 
 public class Controller {
@@ -26,15 +24,25 @@ public class Controller {
     @FXML
     private GridPane grid;
 
-    int[] original = new int[16];
-    int[] puzzle = new int[16];
+    int[] original;
+    int[] puzzle;
     BufferedImage imgs[];
     ArrayList<Integer> shuffle;
-    Node[] node;
+    ImageView[] node;
     public boolean flaga;
     int index1,index2, x1,y1,x2,y2;
+
     public Controller() {
-        node = new Node[16];
+
+        node = new ImageView[16];
+        shuffle = new ArrayList<>();
+        original = new int[16];
+        puzzle = new int[16];
+        for(int i=0;i<16;i++)
+        {
+            shuffle.add(i);
+        }
+
     }
     @FXML
     void initialize(){
@@ -56,72 +64,64 @@ public class Controller {
     public boolean check(int index) {
         if (index == -1)
         {
-            index1=0;
-            index2=0;
-            x1=x2=y1=y2=0;
-            flaga=false;
             return true;
         }
         return false;
-
     }
     @FXML
     public void click(MouseEvent e){
+
+        if (check(whichOne(e.getTarget().hashCode())))
+        {
+            return;
+        }
         if(!flaga) {
-            System.out.println(e.getTarget().hashCode());
+
             index1 = whichOne(e.getTarget().hashCode());
-            if (check(index1))
-            {
-                flaga=!flaga;
-                return;
-            }
             x1 = index1 % 4;
             y1 = index1 / 4 + 1;
-            System.out.println(index1);
-            System.out.println(x1);
-            System.out.println(y1);
             flaga=!flaga;
         }
         else
             {
             index2 = whichOne(e.getTarget().hashCode());
-            if (check(index2))
-            {
-                flaga=!flaga;
-                return;
-            }
             x2 = index2 % 4;
             y2 = index2/ 4 + 1;
-            System.out.println(index2);
-            System.out.println(x2);
-            System.out.println(y2);
-
-
-
 
             Node add = new ImageView(
                     SwingFXUtils
                             .toFXImage(
                                     imgs[shuffle.get(index1)],
                                     null));
+
             grid.add(add,x2,y2);
+            Integer hash = add.hashCode();
+
             add = new ImageView(
                     SwingFXUtils
                             .toFXImage(
                                     imgs[shuffle.get(index2)],
                                     null));
+
             grid.add(add,x1,y1);
-                Integer temp = shuffle.get(index1);
-                shuffle.set(index1,shuffle.get(index2));
-                shuffle.set(index2,temp);
+
+            puzzle[index1]=add.hashCode();
+            puzzle[index2]=hash;
+
+            Integer pozycja = shuffle.get(index1);
+            shuffle.set(index1,shuffle.get(index2));
+            shuffle.set(index2,pozycja);
             flaga=!flaga;
         }
 
     }
+
+
     public int whichOne(int hashCode){
 
         for (int i=0;i<16;i++){
             if ( puzzle[i] == hashCode )
+
             return i;
         }
         return -1;
@@ -138,20 +138,12 @@ public class Controller {
             int chunkWidth = image.getWidth() / cols;
             int chunkHeight = image.getHeight() / rows;
 
-            shuffle = new ArrayList<>();
-
-
-            for(int i=0;i<16;i++)
-            {
-                shuffle.add(i);
-            }
+            imgs = new BufferedImage[chunks];
             Collections.shuffle(shuffle);
 
-            imgs = new BufferedImage[chunks];
             for (int x = 0; x < rows; x++) {
                 for (int y = 0; y < cols; y++) {
                     imgs[x*4+y] = image.getSubimage(chunkWidth*x,chunkHeight*y,chunkWidth,chunkHeight);
-                    original[x*4+y]=imgs[x*4+y].hashCode();
                 }
             }
 
@@ -163,10 +155,6 @@ public class Controller {
                 }
             }
 
-
-            //for (int i = 0; i < imgs.length; i++) {
-          //      ImageIO.write(imgs[i], "png", new File("src\\sample\\lena" + i + ".png"));
-         //   }
             fis.close();
         } catch (Exception e1) {
             System.out.println("Wrong path");
